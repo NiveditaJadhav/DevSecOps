@@ -1,18 +1,20 @@
-# Use a base image compatible with Windows 11 or Windows Server Core
-FROM mcr.microsoft.com/windows/servercore:ltsc2022
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy application files
-COPY . .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Install necessary software or packages
-RUN powershell -Command \
-    Install-WindowsFeature Web-Server
+# Install any needed dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port (example for web server)
+# Make port 80 available to the world outside this container
 EXPOSE 80
 
-# Run the application (e.g., start a web server or service)
-CMD ["powershell", "Start-Process", "powershell", "-ArgumentList", "Start-Service", "W3SVC"]
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
