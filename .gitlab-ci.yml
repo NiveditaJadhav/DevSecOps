@@ -8,7 +8,7 @@ stages:
 sonar_analysis:
   stage: sonar_analysis
   script:
-    - sonar-scanner -Dsonar.projectKey=devopsai_1 -Dsonar.host.url=http://localhost:9000 -Dsonar.login=sqp_261259031d20891e0ffc34a722ce32c3e5205abd
+    - sonar-scanner -Dsonar.projectKey=devopsai_1 -Dsonar.host.url=http://localhost:9000 -Dsonar.login=squ_f4056395905746a36d8dd109253253b281508118
   only:
     - main
     - master
