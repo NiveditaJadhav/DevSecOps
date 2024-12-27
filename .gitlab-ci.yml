@@ -27,7 +27,7 @@ sonarqube_scan:
   stage: test
   script:
     - sonar-scanner \
-        -Dsonar.projectKey=my_project \
+        -Dsonar.projectKey=devopsai \
         -Dsonar.sources=. \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN
