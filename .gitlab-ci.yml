@@ -1,20 +1,8 @@
-image:
-  name: sonarsource/sonar-scanner-cli:11
-  entrypoint: [""]
-
-variables:
-  SONAR_HOST_URL: "http://localhost:9000"  # Provided SonarQube host URL
-  SONAR_TOKEN: "sqp_261259031d20891e0ffc34a722ce32c3e5205abd"  # Provided SonarQube token
-  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Location of the analysis task cache
-  GIT_DEPTH: "0"  # Ensures all branches and history are fetched for accurate analysis
-
 stages:
   - build
   - test
-  - sonarqube-check
-  - sonarqube-vulnerability-report
 
-# Build stage (optional)
+# Build stage (optional, if you have a build step)
 build:
   stage: build
   image: niveditaj1/devsecops:latest
@@ -22,10 +10,13 @@ build:
     - echo "Building the application..."
     - echo "Build complete!"
 
-# Test stage: SonarQube scan
+# SonarQube analysis
 sonarqube_scan:
   stage: test
+  image: niveditaj1/devsecops:latest
   script:
+    - export SONAR_HOST_URL="http://localhost:9000"  # Provided SonarQube host URL
+    - export SONAR_TOKEN="sqp_261259031d20891e0ffc34a722ce32c3e5205abd"  # Provided SonarQube token
     - sonar-scanner \
         -Dsonar.projectKey="devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf" \  # Your SonarQube project key
         -Dsonar.sources="." \  # The directory where your source code is located
@@ -35,37 +26,3 @@ sonarqube_scan:
     - master
     - main
     - develop
-
-# SonarQube check stage
-sonarqube-check:
-  stage: sonarqube-check
-  script:
-    - sonar-scanner \
-        -Dsonar.projectKey="devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf" \  # Your SonarQube project key
-        -Dsonar.sources="." \  # The directory where your source code is located
-        -Dsonar.host.url=$SONAR_HOST_URL \
-        -Dsonar.login=$SONAR_TOKEN
-  allow_failure: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "master"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "develop"
-
-# SonarQube vulnerability report
-sonarqube-vulnerability-report:
-  stage: sonarqube-vulnerability-report
-  script:
-    - curl -u "${SONAR_TOKEN}:" \
-      "${SONAR_HOST_URL}/api/issues/gitlab_sast_export?projectKey=devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf&branch=${CI_COMMIT_BRANCH}&pullRequest=${CI_MERGE_REQUEST_IID}" \
-      -o gl-sast-sonar-report.json
-  allow_failure: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "master"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "develop"
-  artifacts:
-    expire_in: 1 day
-    reports:
-      sast: gl-sast-sonar-report.json
