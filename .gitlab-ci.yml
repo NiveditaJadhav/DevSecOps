@@ -27,8 +27,8 @@ sonarqube_scan:
   stage: test
   script:
     - sonar-scanner \
-        -Dsonar.projectKey=devopsai1 \
-        -Dsonar.sources=. \
+        -Dsonar.projectKey="devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf" \  # Your SonarQube project key
+        -Dsonar.sources="." \  # The directory where your source code is located
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN
   only:
@@ -41,8 +41,8 @@ sonarqube-check:
   stage: sonarqube-check
   script:
     - sonar-scanner \
-        -Dsonar.projectKey=my_project \
-        -Dsonar.sources=. \
+        -Dsonar.projectKey="devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf" \  # Your SonarQube project key
+        -Dsonar.sources="." \  # The directory where your source code is located
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN
   allow_failure: true
@@ -57,7 +57,7 @@ sonarqube-vulnerability-report:
   stage: sonarqube-vulnerability-report
   script:
     - curl -u "${SONAR_TOKEN}:" \
-      "${SONAR_HOST_URL}/api/issues/gitlab_sast_export?projectKey=my_project&branch=${CI_COMMIT_BRANCH}&pullRequest=${CI_MERGE_REQUEST_IID}" \
+      "${SONAR_HOST_URL}/api/issues/gitlab_sast_export?projectKey=devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf&branch=${CI_COMMIT_BRANCH}&pullRequest=${CI_MERGE_REQUEST_IID}" \
       -o gl-sast-sonar-report.json
   allow_failure: true
   rules:
