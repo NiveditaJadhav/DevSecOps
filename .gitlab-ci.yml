@@ -13,9 +13,12 @@ test:
     - echo "Running tests..."
 
 sonarqube:
+  image: mcr.microsoft.com/windows/servercore:ltsc2022  # Use a Windows image
   script:
     - echo "Installing SonarQube scanner..."
-    - choco install sonar-scanner --confirm
+    - powershell -Command "Invoke-WebRequest -Uri https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-windows.zip -OutFile sonar-scanner-cli-4.7.0.2747-windows.zip"
+    - powershell -Command "Expand-Archive -Path sonar-scanner-cli-4.7.0.2747-windows.zip -DestinationPath sonar-scanner"
+    - setx PATH "%PATH%;C:\builds\devops_project1892352\devops\sonar-scanner\sonar-scanner-cli-4.7.0.2747-windows\bin"
     - echo "Running SonarQube scan..."
     - sonar-scanner -Dsonar.projectKey=devopsai_1 -Dsonar.host.url=http://localhost:9000 -Dsonar.login=squ_f4056395905746a36d8dd109253253b281508118
   only:
