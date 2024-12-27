@@ -1,29 +1,46 @@
+image: 
+  name: sonarsource/sonar-scanner-cli:11
+  entrypoint: [""]
+
+variables:
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  SONAR_HOST_URL: "http://localhost:9000"  # Your SonarQube host URL
+  SONAR_TOKEN: "squ_f4056395905746a36d8dd109253253b281508118"  # Your SonarQube token
+
 stages:
   - build
-  - test
-  - sonarqube
-  - deploy
+  - sonarqube-check
+  - sonarqube-vulnerability-report
 
+# Build the Docker image
 build:
+  stage: build
   script:
-    - echo "Building the project..."
+    - docker build -t my-flask-app .
+    - docker run -d -p 5000:5000 my-flask-app
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'push'
 
-test:
-  script:
-    - echo "Running tests..."
+sonarqube-check:
+  stage: sonarqube-check
+  script: 
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
 
-sonarqube:
-  image: mcr.microsoft.com/windows/servercore:ltsc2022  # Use a Windows image
+sonarqube-vulnerability-report:
+  stage: sonarqube-vulnerability-report
   script:
-    - echo "Installing SonarQube scanner..."
-    - powershell -Command "Invoke-WebRequest -Uri https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-windows.zip -OutFile sonar-scanner-cli-4.7.0.2747-windows.zip"
-    - powershell -Command "Expand-Archive -Path sonar-scanner-cli-4.7.0.2747-windows.zip -DestinationPath sonar-scanner"
-    - setx PATH "%PATH%;C:\builds\devops_project1892352\devops\sonar-scanner\sonar-scanner-cli-4.7.0.2747-windows\bin"
-    - echo "Running SonarQube scan..."
-    - sonar-scanner -Dsonar.projectKey=devopsai_1 -Dsonar.host.url=http://localhost:9000 -Dsonar.login=squ_f4056395905746a36d8dd109253253b281508118
-  only:
-    - main
-
-deploy:
-  script:
-    - echo "Deploying the application..."
+    - 'curl -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/gitlab_sast_export?projectKey=devopsai_1&branch=${CI_COMMIT_BRANCH}&pullRequest=${CI_MERGE_REQUEST_IID}" -o gl-sast-sonar-report.json'
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+  artifacts:
+    expire_in: 1 day
+    reports:
+      sast: gl-sast-sonar-report.json
