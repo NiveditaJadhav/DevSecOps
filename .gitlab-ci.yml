@@ -1,14 +1,27 @@
-sonarcloud-check:  
-  image:  
-    name: sonarsource/sonar-scanner-cli:latest  
-    entrypoint: [""]  
-  cache:  
-    key: "${CI_JOB_NAME}"  
-    paths:  
-      - .sonar/cache  
-  script:  
-    - sonar-scanner  
-  only:  
-    - main  
-    - master  
+variables:
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  SONAR_TOKEN: "${SONAR_TOKEN}"  # Token for authentication to SonarQube (ensure this is defined as a secret variable in your CI/CD settings)
+  SONAR_HOST_URL: "https://sonarcloud.io"  # URL of your SonarQube instance
+
+sonarcloud-check:
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - echo "Starting SonarQube analysis..."
+    - sonar-scanner \
+        -Dsonar.projectKey="${CI_PROJECT_NAME}" \
+        -Dsonar.organization="${SONAR_ORG}" \
+        -Dsonar.sources="." \
+        -Dsonar.host.url="${SONAR_HOST_URL}" \
+        -Dsonar.login="${SONAR_TOKEN}"
+    - echo "SonarQube analysis completed"
+  only:
     - merge_requests
+    - master
+    - main
