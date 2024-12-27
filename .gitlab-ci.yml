@@ -1,13 +1,24 @@
 stages:
   - build
   - test
+  - sonarqube
   - deploy
+
 build:
   script:
     - echo "Building the project..."
+
 test:
   script:
     - echo "Running tests..."
+
+sonarqube:
+  script:
+    - echo "Running SonarQube scan..."
+    - sonar-scanner -Dsonar.projectKey=devopsai_1 -Dsonar.host.url=http://localhost:9000 -Dsonar.login=sqp_261259031d20891e0ffc34a722ce32c3e5205abd
+  only:
+    - main
+
 deploy:
   script:
     - echo "Deploying the application..."
