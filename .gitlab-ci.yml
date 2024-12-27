@@ -1,13 +1,14 @@
-sonarcloud-check:
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  script:
-    - sonar-scanner
-  only:
-    - main
+sonarcloud-check:  
+  image:  
+    name: sonarsource/sonar-scanner-cli:latest  
+    entrypoint: [""]  
+  cache:  
+    key: "${CI_JOB_NAME}"  
+    paths:  
+      - .sonar/cache  
+  script:  
+    - sonar-scanner  
+  only:  
+    - main  
+    - master  
     - merge_requests
