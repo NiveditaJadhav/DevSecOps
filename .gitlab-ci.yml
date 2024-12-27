@@ -7,5 +7,7 @@ sonarqube_scan:
   script:
     - curl -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/gitlab_sast_export?projectKey=devopsai_1&branch=${CI_COMMIT_BRANCH}&pullRequest=${CI_MERGE_REQUEST_IID}" -o gl-sast-sonar-report.json
   variables:
-    SONAR_HOST_URL: "http://host.docker.internal:9000"  # Update with your SonarQube server address
+    SONAR_HOST_URL: "http://host.docker.internal:9000"  # For Windows/macOS
+    # OR
+    # SONAR_HOST_URL: "http://<your_host_ip>:9000"  # For Linux
     SONAR_TOKEN: "squ_f4056395905746a36d8dd109253253b281508118"
