@@ -7,23 +7,24 @@ stages:
 build:
   script:
     - echo "Building the Docker image..."
+    - docker --version   # Verify Docker is available
     - docker build -t my-docker-image .
   only:
-    - master  # You can specify other branches or tags
+    - master  # Can be changed to other branches or tags
 
-# Test the Docker image (optional)
+# Test the Docker image
 test:
   script:
     - echo "Running tests..."
-    - docker run --rm my-docker-image # Example: Running the Docker image to check if it works
+    - docker run --rm my-docker-image # Example: Run the Docker image
   only:
-    - master  # You can specify other branches or tags
+    - master  # Can be changed to other branches or tags
 
 # Deploy the Docker image
 deploy:
   script:
     - echo "Deploying the Docker image..."
     - docker tag my-docker-image my-docker-image:latest
-    - docker push my-docker-image:latest  # Example: Pushing the image to a Docker registry
+    - docker push my-docker-image:latest  # Push the image to Docker registry
   only:
-    - master  # You can specify other branches or tags
+    - master  # Can be changed to other branches or tags
