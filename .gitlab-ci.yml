@@ -1,47 +1,29 @@
-image: docker:latest
-
-services:
-  - docker:dind
-
-variables:
-  DOCKER_DRIVER: overlay2
-  SONAR_HOST_URL: "http://localhost:9000"  # Replace with your SonarQube host URL
-  SONAR_TOKEN: "sqp_261259031d20891e0ffc34a722ce32c3e5205abd"  # Your SonarQube token
-  SONAR_PROJECT_KEY: "devops_project1892352_devops_a29af4a0-016e-4fe8-ae2a-e657b6939fdf"  # Your SonarQube project key
-  IMAGE_NAME: "your-docker-image-name"
-  DOCKER_REGISTRY: "docker.io"  # or gitlab registry if you want to push to GitLab registry
-  DOCKER_IMAGE_TAG: "latest"
-
 stages:
   - build
-  - scan
-  - push
+  - test
+  - deploy
 
 # Build the Docker image
-build_image:
-  stage: build
+build:
   script:
-    - docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:$DOCKER_IMAGE_TAG .
+    - echo "Building the Docker image..."
+    - docker build -t my-docker-image .
   only:
     - master  # You can specify other branches or tags
 
-# Run SonarQube scan on the Docker image
-sonarqube_scan:
-  stage: scan
+# Test the Docker image (optional, you can adjust this stage for your needs)
+test:
   script:
-    - docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL -e SONAR_TOKEN=$SONAR_TOKEN sonarsource/sonar-scanner-cli:11 \
-        -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-        -Dsonar.sources=./src \
-        -Dsonar.host.url=$SONAR_HOST_URL \
-        -Dsonar.login=$SONAR_TOKEN
+    - echo "Running tests..."
+    - docker run --rm my-docker-image # Example: Running the Docker image to check if it works
   only:
-    - master
+    - master  # You can specify other branches or tags
 
-# Push the Docker image to the Docker registry
-push_image:
-  stage: push
+# Deploy the Docker image (optional, you can adjust this stage for your needs)
+deploy:
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker push $DOCKER_REGISTRY/$IMAGE_NAME:$DOCKER_IMAGE_TAG
+    - echo "Deploying the Docker image..."
+    - docker tag my-docker-image my-docker-image:latest
+    - docker push my-docker-image:latest  # Example: Pushing the image to a Docker registry
   only:
     - master  # You can specify other branches or tags
