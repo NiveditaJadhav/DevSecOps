@@ -21,7 +21,7 @@ sonarcloud-check:
 # ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
-  image: niveditaj1/devsecops:latest  # Using your custom Docker image
+  image: openjdk:17-jre  # Using OpenJDK 17 Docker image
   script:
     # Start the ZAP server with the specific jar file on port 9090
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host localhost
@@ -35,4 +35,5 @@ zap_scan:
   only:
     - master
     - main
+
 
