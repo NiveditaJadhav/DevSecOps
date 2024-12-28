@@ -12,6 +12,11 @@ sonarcloud-check:
       - .sonar/cache
   script:
     - sonar-scanner
+terraform_apply:
+  stage: deploy
+  script:
+    - terraform init
+    - terraform apply -auto-approve
   only:
     - merge_requests
     - master
