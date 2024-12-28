@@ -21,37 +21,21 @@ sonarcloud-check:
 # ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
-  image: openjdk:17-jre  # Use OpenJDK 17 Docker image
+  image: openjdk:17-slim  # Use OpenJDK 17 slim image
   script:
-    # Step 1: Start the ZAP server with the specific jar file on port 9090
     - echo "Starting ZAP in daemon mode..."
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 &
     - sleep 10  # Wait for ZAP to fully start
-
-    # Step 2: Perform a security scan on the application running at localhost:3000
-    - echo "Starting ZAP active scan on http://localhost:3000"
-    - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true" -o zap_scan.json
-    - echo "Scan started. Monitoring progress..."
-
-    # Step 3: Monitor the scan progress until it completes
-    - |
-      while [ "$(curl -s http://localhost:9090/JSON/ascan/view/status/ | jq -r '.status')" != "100" ]; do
-        echo "Scan in progress..."
-        sleep 10
-      done
-
-    # Step 4: Download the HTML report after the scan completes
-    - echo "Scan complete. Downloading HTML report..."
+    - echo "Running security scan..."
+    - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
+    - echo "Downloading HTML report..."
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
 
   artifacts:
     paths:
-      - zap_report.html  # Save the ZAP report as an artifact
-    expire_in: 1 week  # Retain the artifact for a week
-
+      - zap_report.html
   only:
-    - master  # Run only on the master branch
-    - main    # Run on the main branch
-
+    - master
+    - main
 
 
