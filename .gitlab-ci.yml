@@ -1,8 +1,7 @@
 stages:
   - test
-  - infrastructure  # Add infrastructure stage if applicable
 
-# SonarCloud Job (if you want to include it)
+# SonarCloud Job
 sonarcloud-check:
   stage: test
   image:
@@ -19,16 +18,18 @@ sonarcloud-check:
     - master
     - main
 
-# OWASP ZAP Dynamic Security Test Job
+# ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
-  image: owasp/zap2docker-stable  # Use the OWASP ZAP image
   script:
-    - export TARGET_URL="http://localhost:5000/"  # Set the target URL
-    - zap.sh -cmd -quickurl $TARGET_URL -quickout zap_report.html  # Run a quick scan and generate a report
+    # Start the ZAP server and perform a scan
+    - java -jar zap.jar -daemon -port 8080 -host localhost
+    - curl -X POST "http://localhost:8080/JSON/ascan/action/scan/?url=http://localhost:5000/&recurse=true&inScopeOnly=true"
+    # Download and save the HTML report
+    - curl -X GET "http://localhost:8080/OTHER/core/other/htmlreport/" -o zap_report.html
   artifacts:
     paths:
-      - zap_report.html  # Save the scan report as an artifact
+      - zap_report.html  # Save the ZAP report as an artifact
   only:
     - master
     - main
