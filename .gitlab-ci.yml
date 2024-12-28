@@ -1,32 +1,11 @@
-stages:
-  - build
-  - deploy
-
-# Job to build the Docker image using docker-compose
 docker_build:
   stage: build
-  image: docker:latest  # Use the Docker image for running Docker commands
-  services:
-    - docker:dind  # Docker-in-Docker service
-  script:
-    - apt-get update -y && apt-get install -y curl jq  # Install curl and jq
-    - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose  # Install latest Docker Compose
-    - chmod +x /usr/local/bin/docker-compose  # Make docker-compose executable
-    - docker-compose -f docker-compose.yml build  # Build the project with Docker Compose
-    - docker-compose -f docker-compose.yml up -d  # Bring up the containers in detached mode
-  tags:
-    - docker  # Use the 'docker' tag to run this job on runners with Docker support
-  only:
-    - master  # Trigger the job only on the 'master' branch (you can adjust this as needed)
-
-# Optional job to tear down the services after running the pipeline
-docker_teardown:
-  stage: deploy
   image: docker:latest
   services:
     - docker:dind
   script:
-    - docker-compose -f docker-compose.yml down  # Tear down the services after the job is complete
-  when: always  # Run this job always, even if the build fails
-  tags:
-    - docker  # Make sure this job also runs on a Docker-enabled runner
+    - apt-get update -y && apt-get install -y curl jq
+    - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    - chmod +x /usr/local/bin/docker-compose
+    - docker-compose -f docker-compose.yml build
+    - docker-compose -f docker-compose.yml up -d
