@@ -1,52 +1,7 @@
-# Define image for the entire pipeline (if desired)
-image: openjdk:17-slim
-
-# Define caching for dependencies to speed up subsequent builds
-cache:
-  key: "$CI_COMMIT_REF_SLUG"
-  paths:
-    - .m2/repository/    # For Maven dependencies
-    - build/             # Gradle build cache (if using Gradle)
-
-# Define stages in the pipeline
 stages:
-  - init                # Initial setup
-  - build               # Build the application
-  - test                # Run tests
-  - security            # Perform security analysis
-  - package             # Package the application
-  - deploy              # Deploy the application
+  - test
 
-# Initial setup (e.g., update packages)
-init:
-  stage: init
-  script:
-    - apt-get update && apt-get install -y curl git
-  tags:
-    - docker
-
-# Build stage: compile the Java code
-build:
-  stage: build
-  script:
-    # Example for Maven
-    - mvn clean compile
-  only:
-    - main               # Run this only on the main branch
-
-# Test stage: run unit tests
-test:
-  stage: test
-  script:
-    # Example for Maven
-    - mvn test
-  artifacts:
-    paths:
-      - target/surefire-reports/ # Save test reports
-  only:
-    - merge_requests             # Run tests only on merge requests
-
-# SonarCloud job for code analysis
+# SonarCloud Job
 sonarcloud-check:
   stage: test
   image:
@@ -64,40 +19,26 @@ sonarcloud-check:
     - main
 
 # ZAP Dynamic Security Test Job
-zap-security-test:
-  stage: security
-  image:
-    name: owasp/zap2docker-stable
-    entrypoint: [""]  # Clear the default entrypoint
+zap_scan:
+  stage: test
+  image: openjdk:17-slim  # Use OpenJDK 17 slim image
   script:
-    - zap-cli start
-    - zap-cli active-scan -r http://your-web-app-url
-    - zap-cli report -o zap_report.html
+    # Install curl in the slim image
+    - apt-get update && apt-get install -y curl
+    - echo "Starting ZAP in daemon mode..."
+    - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 &
+    - sleep 10  # Wait for ZAP to fully start
+    - echo "Running security scan..."
+    - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
+    - echo "Downloading HTML report..."
+    - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
+
   artifacts:
     paths:
-      - zap_report.html  # Save ZAP scan report
+      - zap_report.html
   only:
-    - merge_requests
     - master
     - main
 
-# Package stage: create a JAR or WAR file
-package:
-  stage: package
-  script:
-    # Package the application
-    - mvn package
-  artifacts:
-    paths:
-      - target/*.jar             # Save the generated JAR/WAR file
-  only:
-    - tags                       # Run this only on Git tags
 
-# Deploy stage: optional deployment step
-deploy:
-  stage: deploy
-  script:
-    - echo "Deploying application..."
-    - scp target/*.jar user@server:/path/to/deployment/
-  only:
-    - tags
+
