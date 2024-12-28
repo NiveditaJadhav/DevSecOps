@@ -1,8 +1,13 @@
+stages:
+  - test
+  - infrastructure  # Added to match the terraform_apply stage
+
 variables:
-  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
-  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Location of the analysis task cache
+  GIT_DEPTH: "0"  # Ensures all branches are fetched for Sonar analysis
 
 sonarcloud-check:
+  stage: test
   image:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
@@ -12,6 +17,11 @@ sonarcloud-check:
       - .sonar/cache
   script:
     - sonar-scanner
+  only:
+    - merge_requests
+    - master
+    - main
+
 terraform_apply:
   stage: infrastructure
   image: hashicorp/terraform:light
@@ -19,6 +29,5 @@ terraform_apply:
     - terraform init
     - terraform apply -auto-approve
   only:
-    - merge_requests
     - master
     - main
