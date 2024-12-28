@@ -22,6 +22,8 @@ sonarcloud-check:
 zap_scan:
   stage: test
   script:
+    # Install Java
+    - apt-get update && apt-get install -y openjdk-11-jre-headless
     # Start the ZAP server on port 9090 and perform a scan
     - java -jar zap.jar -daemon -port 9090 -host localhost
     - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:5000/&recurse=true&inScopeOnly=true"
