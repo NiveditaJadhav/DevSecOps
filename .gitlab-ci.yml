@@ -26,44 +26,38 @@ zap_scan:
     # Install required dependencies
     - apt-get update && apt-get install -y curl unzip
     - echo "Downloading ZAP..."
-    # Download the ZAP jar file
+    # Download the ZAP tar file
     - curl -L https://github.com/zaproxy/zaproxy/releases/download/v2.15.0/ZAP_2.15.0_linux.tar.gz -o zap.tar.gz
     - tar -xzf zap.tar.gz
     - cd ZAP_2.15.0  # Change directory to the ZAP folder
     - echo "Starting ZAP in daemon mode..."
     # Run ZAP in daemon mode with API key disabled
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 -config api.disablekey=true &
-    # Wait for ZAP to be ready (increased wait time and a retry loop)
+    # Wait for ZAP to be ready
     - echo "Waiting for ZAP to start..."
     - |
       timeout=60  # Timeout in seconds
       counter=0
-      until curl -s http://localhost:9090/JSON/core/view/version > /dev/null || [ $counter -ge $timeout ]; do
-        echo "Waiting for ZAP to start... ($counter)"
+      while ! curl -s http://localhost:9090/JSON/core/view/version > /dev/null && [ $counter -lt $timeout ]; do
+        echo "Waiting for ZAP to start... ($counter seconds)"
         sleep 5
         counter=$((counter+5))
       done
     - if [ $counter -ge $timeout ]; then echo "ZAP failed to start"; exit 1; fi
     - echo "Running security scan..."
-    # Run the ZAP scan
+    # Start the security scan
     - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
     - echo "Downloading HTML report..."
     # Download the HTML report
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
-
-  script:
-  - echo "Generating ZAP report placeholder..."
-  - echo "<html><body><h1>Placeholder ZAP Report</h1></body></html>" > zap_report.html
-artifacts:
-  paths:
-    - zap_report.html
-
+    # Verify the report is not empty
+    - if [ ! -s zap_report.html ]; then
+        echo "ZAP report is empty! Check the ZAP configuration or scan results.";
+        exit 1;
+      fi
+  artifacts:
+    paths:
+      - zap_report.html
   only:
     - master
     - main
-
-
-
-
-
-
