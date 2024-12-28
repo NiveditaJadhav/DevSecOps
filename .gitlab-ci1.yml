@@ -1,0 +1,10 @@
+stages:
+  - test
+
+trivy_scan:
+  stage: test
+  script:
+    - trivy image flask-mysql-docker-app:latest
+  only:
+    - main
+    - master
