@@ -18,18 +18,25 @@ sonarcloud-check:
     - master
     - main
 
+
 # ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
+  image: openjdk:11  # Use a Java-based Docker image
   script:
-    # Start the ZAP server and perform a scan
-    - java -jar zap.jar -daemon -port 8080 -host localhost
+    # Download ZAP
+    - curl -O https://github.com/zaproxy/zaproxy/releases/download/v2.12.0/ZAP_2.12.0_Crossplatform.zip
+    - unzip ZAP_2.12.0_Crossplatform.zip -d zap
+    - cd zap
+    # Start ZAP in daemon mode and perform the scan
+    - java -jar zap.jar -daemon -port 8080 -host localhost &
     - curl -X POST "http://localhost:8080/JSON/ascan/action/scan/?url=http://localhost:5000/&recurse=true&inScopeOnly=true"
     # Download and save the HTML report
     - curl -X GET "http://localhost:8080/OTHER/core/other/htmlreport/" -o zap_report.html
   artifacts:
     paths:
-      - zap_report.html  # Save the ZAP report as an artifact
+      - zap/zap_report.html  # Save the ZAP report as an artifact
   only:
     - master
     - main
+
