@@ -8,9 +8,12 @@ build:
   stage: build
   image: ruby:3.1
   script:
-    - apt-get update -y && apt-get install -y curl
+    # Install dependencies including jq and curl
+    - apt-get update -y && apt-get install -y curl jq
+    # Install docker-compose
     - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     - chmod +x /usr/local/bin/docker-compose
+    # Build the containers
     - docker-compose -f docker-compose.yml build
 
 # Test stage (optional)
