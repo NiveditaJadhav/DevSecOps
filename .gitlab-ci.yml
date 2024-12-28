@@ -4,7 +4,10 @@ docker_build:
   services:
     - docker:dind
   script:
-    - apt-get update -y && apt-get install -y curl jq
+    # Install missing dependencies
+    - apk update && apk add curl jq  # For Alpine-based images
+    # OR, if using a different image like Ubuntu:
+    # - apt-get update -y && apt-get install -y curl jq
     - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     - chmod +x /usr/local/bin/docker-compose
     - docker-compose -f docker-compose.yml build
