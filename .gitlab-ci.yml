@@ -33,7 +33,17 @@ zap_scan:
     - echo "Starting ZAP in daemon mode..."
     # Run ZAP in daemon mode
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 &
-    - sleep 10  # Wait for ZAP to fully start
+    # Wait for ZAP to be ready (increased wait time and a retry loop)
+    - echo "Waiting for ZAP to start..."
+    - |
+      timeout=60  # Timeout in seconds
+      counter=0
+      until curl -s http://localhost:9090/JSON/core/view/version > /dev/null || [ $counter -ge $timeout ]; do
+        echo "Waiting for ZAP to start... ($counter)"
+        sleep 5
+        counter=$((counter+5))
+      done
+    - if [ $counter -ge $timeout ]; then echo "ZAP failed to start"; exit 1; fi
     - echo "Running security scan..."
     # Run the ZAP scan
     - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
@@ -47,6 +57,7 @@ zap_scan:
   only:
     - master
     - main
+
 
 
 
