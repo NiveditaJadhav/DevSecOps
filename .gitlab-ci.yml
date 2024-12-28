@@ -6,14 +6,20 @@ stages:
 # Build stage
 build:
   stage: build
+  image: ruby:3.1
   script:
+    - apt-get update -y && apt-get install -y curl
+    - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    - chmod +x /usr/local/bin/docker-compose
     - docker-compose -f docker-compose.yml build
 
 # Test stage (optional)
 test:
   stage: test
+  image: ruby:3.1
   script:
     - docker-compose -f docker-compose.yml up -d
+    - sleep 10  # Wait for services to start
     - pytest tests  # Adjust this according to your testing framework
   services:
     - mysql:8.0
@@ -34,4 +40,3 @@ security_scan:
   dependencies:
     - build
     - test
-
