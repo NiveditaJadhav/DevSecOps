@@ -8,7 +8,22 @@ docker_build:
     - apk update && apk add curl jq  # For Alpine-based images
     # OR, if using a different image like Ubuntu:
     # - apt-get update -y && apt-get install -y curl jq
+    # Install Docker Compose
     - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     - chmod +x /usr/local/bin/docker-compose
+    # Build and start containers
     - docker-compose -f docker-compose.yml build
     - docker-compose -f docker-compose.yml up -d
+    # Run ZAP scan on the app (assuming it's running on http://localhost:5000)
+    - |
+      docker run --rm -u zap -v -p 8080:8080 owasp/zap2docker-stable zap-baseline.py -t http://localhost:5000
+    # Optional: Save ZAP report if needed
+    - docker cp zap:/zap/wrk/* ./zap-reports/
+    - ls ./zap-reports/
+    # If you want to upload the report as an artifact
+    - mkdir -p reports/zap
+    - mv ./zap-reports/* reports/zap/
+  artifacts:
+    paths:
+      - reports/zap/
+    expire_in: 1 day
