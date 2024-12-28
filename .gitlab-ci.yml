@@ -76,6 +76,7 @@ zap_scan:
     - echo "Committing ZAP HTML report to repository..."
     - git config --global user.email "$GITLAB_USER_EMAIL"  # Use CI variable for email
     - git config --global user.name "$GITLAB_USER_NAME"  # Use CI variable for username
+    - git checkout $CI_COMMIT_REF_NAME  # Ensure the correct branch is checked out
     - git add zap_report.html  # Stage the report file
     - git commit -m "Add ZAP security report"  # Commit the report
     - git push https://oauth2:${GITLAB_USER_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git $CI_COMMIT_REF_NAME  # Push changes using CI token
@@ -86,9 +87,5 @@ zap_scan:
   only:
     - master
     - main
-
-
-
-
 
 
