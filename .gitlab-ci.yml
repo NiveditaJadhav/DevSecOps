@@ -19,26 +19,73 @@ sonarcloud-check:
     - main
 
 # ZAP Dynamic Security Test Job
-zap_scan:
-  stage: test
-  image: openjdk:17-slim  # Use OpenJDK 17 slim image
-  script:
-    # Install curl in the slim image
-    - apt-get update && apt-get install -y curl
-    - echo "Starting ZAP in daemon mode..."
-    - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 &
-    - sleep 10  # Wait for ZAP to fully start
-    - echo "Running security scan..."
-    - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
-    - echo "Downloading HTML report..."
-    - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
+# Use OpenJDK 17 as the base image
+image: openjdk:17-slim
 
+# Define caching for dependencies to speed up subsequent builds
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository/    # For Maven dependencies
+    - build/             # Gradle build cache (if using Gradle)
+
+# Define stages in the pipeline
+stages:
+  - init                # Initial setup
+  - build               # Build the application
+  - test                # Run tests
+  - package             # Package the application
+
+# Initial setup (e.g., update packages)
+init:
+  stage: init
+  script:
+    - apt-get update && apt-get install -y curl git
+  tags:
+    - docker
+
+# Build stage: compile the Java code
+build:
+  stage: build
+  script:
+    # Example for Maven
+    - mvn clean compile
+  only:
+    - main               # Run this only on the main branch
+
+# Test stage: run unit tests
+test:
+  stage: test
+  script:
+    # Example for Maven
+    - mvn test
   artifacts:
     paths:
-      - zap_report.html
+      - target/surefire-reports/ # Save test reports
   only:
-    - master
-    - main
+    - merge_requests             # Run tests only on merge requests
+
+# Package stage: create a JAR or WAR file
+package:
+  stage: package
+  script:
+    # Package the application
+    - mvn package
+  artifacts:
+    paths:
+      - target/*.jar             # Save the generated JAR/WAR file
+  only:
+    - tags                       # Run this only on Git tags
+
+# Additional job to deploy artifacts (optional)
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - scp target/*.jar user@server:/path/to/deployment/
+  only:
+    - tags
+
 
 
 
