@@ -1,18 +1,31 @@
-variables:
-  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
-  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+stages:
+  - test
+  - infrastructure  # Add infrastructure stage if applicable
 
+# SonarCloud Job (if you want to include it)
 sonarcloud-check:
+  stage: test
   image:
     name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
+    entrypoint: [""]  # Clear the default entrypoint
   cache:
     key: "${CI_JOB_NAME}"
     paths:
-      - .sonar/cache
+      - .sonar/cache  # Cache for SonarCloud analysis
   script:
-    - sonar-scanner
+    - sonar-scanner  # Run SonarCloud scanner
   only:
     - merge_requests
     - master
     - main
+
+# OWASP ZAP Dynamic Security Test Job
+zap_scan:
+  stage: test
+  image: owasp/zap2docker-stable  # OWASP ZAP Docker image
+  script:
+    - export TARGET_URL="http://localhost:5000/"  # Set the target URL for local deployment
+    - zap-baseline.py -t $TARGET_URL  # Run ZAP security scan on the deployed app
+  only:
+    - master  # Run only on the master branch
+    - main    # Run on the main branch
