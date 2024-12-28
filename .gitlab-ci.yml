@@ -18,26 +18,18 @@ sonarcloud-check:
     - master
     - main
 
-
 # ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
-  image: ubuntu:latest  # Use a base image that can be customized
-  before_script:
-    - apt-get update && apt-get install -y openjdk-11-jre curl wget unzip  # Install Java and required tools
-    - wget https://github.com/zaproxy/zaproxy/releases/download/v2.13.0/ZAP_2_13_0.zip -O zap.zip  # Download ZAP
-    - unzip zap.zip -d zap  # Extract ZAP
   script:
-    - java -jar zap/zap.jar -daemon -port 8080 -host localhost  # Start ZAP in daemon mode
-    - curl -X POST "http://localhost:8080/JSON/ascan/action/scan/?url=http://localhost:5000/&recurse=true&inScopeOnly=true"
-    - curl -X GET "http://localhost:8080/OTHER/core/other/htmlreport/" -o zap_report.html  # Fetch the report
+    # Start the ZAP server on port 9090 and perform a scan
+    - java -jar zap.jar -daemon -port 9090 -host localhost
+    - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:5000/&recurse=true&inScopeOnly=true"
+    # Download and save the HTML report
+    - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
   artifacts:
     paths:
-      - zap_report.html  # Save the report
+      - zap_report.html  # Save the ZAP report as an artifact
   only:
     - master
     - main
-
-
-
-
