@@ -1,24 +1,3 @@
-stages:
-  - test
-
-# SonarCloud Job
-sonarcloud-check:
-  stage: test
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]  # Clear the default entrypoint
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache  # Cache for SonarCloud analysis
-  script:
-    - sonar-scanner  # Run SonarCloud scanner
-  only:
-    - merge_requests
-    - master
-    - main
-
-# ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
   image: openjdk:17-slim  # Use OpenJDK 17 slim image
@@ -50,6 +29,9 @@ zap_scan:
     - echo "Downloading HTML report..."
     # Download the HTML report
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
+    # Move the report to the root working directory
+    - mv zap_report.html ../zap_report.html
+    - cd ..  # Go back to the root working directory
     # Verify the report is not empty
     - if [ ! -s zap_report.html ]; then
         echo "ZAP report is empty! Check the ZAP configuration or scan results.";
