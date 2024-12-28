@@ -22,7 +22,7 @@ sonarcloud-check:
 # OWASP ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
-  image: owasp/zap2docker-stable  # OWASP ZAP Docker image
+  image: flask-mysql-docker-app:latest  # Use the correct image name
   script:
     - export TARGET_URL="http://localhost:5000/"  # Set the target URL for local deployment
     - zap-baseline.py -t $TARGET_URL  # Run ZAP security scan on the deployed app
