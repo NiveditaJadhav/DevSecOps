@@ -5,15 +5,19 @@ docker_build:
     - docker:dind
   script:
     # Install missing dependencies
-    - apk update && apk add curl jq  # For Alpine-based images
-    # OR, if using a different image like Ubuntu:
-    # - apt-get update -y && apt-get install -y curl jq
+    - apk update && apk add curl jq bash git  # Adding git to commit the report
     # Install Docker Compose
-    - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    - chmod +x /usr/local/bin/docker-compose
+    - |
+      DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)
+      curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      chmod +x /usr/local/bin/docker-compose
+    # Verify Docker Compose installation
+    - docker-compose --version
     # Build and start containers
     - docker-compose -f docker-compose.yml build
     - docker-compose -f docker-compose.yml up -d
+    # Wait for the app to fully start (optional, to avoid race condition)
+    - sleep 10  # Adjust based on your app's start-up time
     # Run ZAP scan on the app (assuming it's running on http://localhost:5000)
     - |
       docker run --rm -u zap -v -p 8080:8080 owasp/zap2docker-stable zap-baseline.py -t http://localhost:5000
@@ -23,6 +27,12 @@ docker_build:
     # If you want to upload the report as an artifact
     - mkdir -p reports/zap
     - mv ./zap-reports/* reports/zap/
+    # Commit and push the ZAP report to the current GitLab repository
+    - git config --global user.email "gitlab-ci@yourdomain.com"
+    - git config --global user.name "GitLab CI"
+    - git add reports/zap/*
+    - git commit -m "Add ZAP scan report"
+    - git push origin HEAD:main  # Make sure the branch is the correct one (default is 'main')
   artifacts:
     paths:
       - reports/zap/
