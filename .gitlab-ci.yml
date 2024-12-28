@@ -12,13 +12,12 @@ sonarcloud-check:
       - .sonar/cache
   script:
     - sonar-scanner
-terraform_job:
-  image:
-    name: hashicorp/terraform:latest
-    entrypoint: [""]
+terraform_apply:
+  stage: infrastructure
+  image: hashicorp/terraform:light
   script:
     - terraform init
-    - terraform plan
+    - terraform apply -auto-approve
   only:
     - merge_requests
     - master
