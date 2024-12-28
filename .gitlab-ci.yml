@@ -19,33 +19,12 @@ sonarcloud-check:
     - main
 
 # ZAP Dynamic Security Test Job
-stages:
-  - test
-
-# SonarCloud Job
-sonarcloud-check:
-  stage: test
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]  # Clear the default entrypoint
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache  # Cache for SonarCloud analysis
-  script:
-    - sonar-scanner  # Run SonarCloud scanner
-  only:
-    - merge_requests
-    - master
-    - main
-
-# ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
   image: openjdk:17-slim  # Use OpenJDK 17 slim image
   script:
     # Install required dependencies
-    - apt-get update && apt-get install -y curl unzip git
+    - apt-get update && apt-get install -y curl unzip
     - echo "Downloading ZAP..."
     # Download the ZAP jar file
     - curl -L https://github.com/zaproxy/zaproxy/releases/download/v2.15.0/ZAP_2.15.0_linux.tar.gz -o zap.tar.gz
@@ -53,7 +32,7 @@ zap_scan:
     - cd ZAP_2.15.0  # Change directory to the ZAP folder
     - echo "Starting ZAP in daemon mode..."
     # Run ZAP in daemon mode with API key disabled
-    - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 -config api.disablekey=true & 
+    - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 -config api.disablekey=true &
     # Wait for ZAP to be ready (increased wait time and a retry loop)
     - echo "Waiting for ZAP to start..."
     - |
@@ -72,20 +51,15 @@ zap_scan:
     # Download the HTML report
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
 
-    # Add the HTML report to the repository and commit
-    - echo "Committing ZAP HTML report to repository..."
-    - git config --global user.email "$GITLAB_USER_EMAIL"  # Use CI variable for email
-    - git config --global user.name "$GITLAB_USER_NAME"  # Use CI variable for username
-    - git checkout $CI_COMMIT_REF_NAME  # Ensure the correct branch is checked out
-    - git add zap_report.html  # Stage the report file
-    - git commit -m "Add ZAP security report"  # Commit the report
-    - git push https://oauth2:${GITLAB_USER_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git $CI_COMMIT_REF_NAME  # Push changes using CI token
-
   artifacts:
     paths:
       - zap_report.html
   only:
     - master
     - main
+
+
+
+
 
 
