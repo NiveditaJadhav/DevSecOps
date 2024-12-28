@@ -14,7 +14,6 @@ docker_build:
     - chmod +x /usr/local/bin/docker-compose  # Make docker-compose executable
     - docker-compose -f docker-compose.yml build  # Build the project with Docker Compose
     - docker-compose -f docker-compose.yml up -d  # Bring up the containers in detached mode
-  privileged: true  # Enable privileged mode for Docker
   tags:
     - docker  # Use the 'docker' tag to run this job on runners with Docker support
   only:
