@@ -23,6 +23,8 @@ zap_scan:
   stage: test
   image: openjdk:17-slim  # Use OpenJDK 17 slim image
   script:
+    # Install curl in the slim image
+    - apt-get update && apt-get install -y curl
     - echo "Starting ZAP in daemon mode..."
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 &
     - sleep 10  # Wait for ZAP to fully start
@@ -37,5 +39,6 @@ zap_scan:
   only:
     - master
     - main
+
 
 
