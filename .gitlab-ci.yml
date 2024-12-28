@@ -23,14 +23,22 @@ zap_scan:
   stage: test
   image: openjdk:17-slim  # Use OpenJDK 17 slim image
   script:
-    # Install curl in the slim image
-    - apt-get update && apt-get install -y curl
+    # Install required dependencies
+    - apt-get update && apt-get install -y curl unzip
+    - echo "Downloading ZAP..."
+    # Download the ZAP jar file
+    - curl -L https://github.com/zaproxy/zaproxy/releases/download/v2.15.0/ZAP_2.15.0_linux.tar.gz -o zap.tar.gz
+    - tar -xzf zap.tar.gz
+    - cd ZAP_2.15.0  # Change directory to the ZAP folder
     - echo "Starting ZAP in daemon mode..."
+    # Run ZAP in daemon mode
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 &
     - sleep 10  # Wait for ZAP to fully start
     - echo "Running security scan..."
+    # Run the ZAP scan
     - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
     - echo "Downloading HTML report..."
+    # Download the HTML report
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
 
   artifacts:
@@ -39,6 +47,7 @@ zap_scan:
   only:
     - master
     - main
+
 
 
 
