@@ -1,5 +1,25 @@
 stages:
+  - build
   - test
+docker_build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    # Install missing dependencies
+    - apk update && apk add curl jq  # For Alpine-based images
+    # OR, if using Ubuntu-based images:
+    # - apt-get update -y && apt-get install -y curl jq
+    - echo "Installing Docker Compose..."
+    - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    - chmod +x /usr/local/bin/docker-compose
+    - echo "Building Docker Compose services..."
+    - docker-compose -f docker-compose.yml build
+    - echo "Starting Docker Compose services..."
+    - docker-compose -f docker-compose.yml up -d
+  only:
+    - master
 
 # SonarCloud Job
 sonarcloud-check:
@@ -61,6 +81,14 @@ zap_scan:
   artifacts:
     paths:
       - zap_report.html
+trivy_scan:
+  stage: scan
+  script:
+    - echo "Running Trivy image scan..."
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
   only:
     - master
     - main
