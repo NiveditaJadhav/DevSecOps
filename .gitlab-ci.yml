@@ -1,6 +1,8 @@
 stages:
   - build
   - test
+  - scan
+  - deploy
 docker_build:
   stage: build
   image: docker:latest
