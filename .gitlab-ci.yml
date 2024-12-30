@@ -11,17 +11,21 @@ docker_build:
     - docker:dind
   script:
     # Install missing dependencies
-    - apk update && apk add curl jq  # For Alpine-based images
+    - apk update && apk add curl jq
     - echo "Installing Docker Compose..."
     - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     - chmod +x /usr/local/bin/docker-compose
     - echo "Building Docker Compose services..."
 
-    # Ensure the correct branch has the docker-compose.yml file
-    - if [ ! -f docker-compose.yml ]; then
-        echo "docker-compose.yml not found, switching to master branch...";
-        git fetch origin master;
-        git checkout master -- docker-compose.yml;
+    # Check for the existence of docker-compose.yml and fetch from the appropriate branch
+    - |
+      if [ ! -f docker-compose.yml ]; then
+        echo "docker-compose.yml not found, trying to fetch from branches...";
+        git fetch origin;
+        git checkout main -- docker-compose.yml || git checkout master -- docker-compose.yml || {
+          echo "docker-compose.yml not found in both main and master branches!";
+          exit 1;
+        }
       fi
 
     # Build and start Docker Compose services
@@ -32,6 +36,7 @@ docker_build:
     - merge_requests
     - main
     - master
+
 
 
 # SonarCloud Job
