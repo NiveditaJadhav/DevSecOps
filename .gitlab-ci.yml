@@ -4,8 +4,7 @@ stages:
   - scan
   - deploy
 
-ariables:
-  DOCKER_IMAGE: devsecops-app:latest
+
 
 # Build stage: Build the Docker image
 build:
