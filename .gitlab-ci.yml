@@ -21,8 +21,8 @@ docker_build:
     - echo "Starting Docker Compose services..."
     - docker-compose -f docker-compose.yml up -d
   only:
-    - master
     - main
+    - master
 
 # SonarCloud Job
 sonarcloud-check:
