@@ -3,6 +3,7 @@ stages:
   - test
   - scan
   - deploy
+
 docker_build:
   stage: build
   image: docker:latest
@@ -11,12 +12,19 @@ docker_build:
   script:
     # Install missing dependencies
     - apk update && apk add curl jq  # For Alpine-based images
-    # OR, if using Ubuntu-based images:
-    # - apt-get update -y && apt-get install -y curl jq
     - echo "Installing Docker Compose..."
     - curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     - chmod +x /usr/local/bin/docker-compose
     - echo "Building Docker Compose services..."
+
+    # Ensure the correct branch has the docker-compose.yml file
+    - if [ ! -f docker-compose.yml ]; then
+        echo "docker-compose.yml not found, switching to master branch...";
+        git fetch origin master;
+        git checkout master -- docker-compose.yml;
+      fi
+
+    # Build and start Docker Compose services
     - docker-compose -f docker-compose.yml build
     - echo "Starting Docker Compose services..."
     - docker-compose -f docker-compose.yml up -d
@@ -24,6 +32,7 @@ docker_build:
     - merge_requests
     - main
     - master
+
 
 # SonarCloud Job
 sonarcloud-check:
