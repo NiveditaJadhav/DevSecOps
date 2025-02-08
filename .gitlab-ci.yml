@@ -15,7 +15,7 @@ build:
     - terraform validate
     - terraform plan
     # Uncomment for actual deployment
-    # - terraform apply -auto-approve
+    - terraform apply -auto-approve
 
 # SonarCloud Job
 sonarcloud-check:
