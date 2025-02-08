@@ -25,7 +25,6 @@ terraform_init:
     - mv terraform /usr/local/bin/
     - terraform init
 
-
 terraform_validate:
   stage: validate
   image: niveditaj1/devsecops:latest
@@ -34,7 +33,9 @@ terraform_validate:
     - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
     - unzip terraform.zip
     - mv terraform /usr/local/bin/
+    - terraform init  # <-- This is the missing step
     - terraform validate
+
 
 terraform_plan:
   stage: plan
