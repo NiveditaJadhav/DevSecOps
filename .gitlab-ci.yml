@@ -8,28 +8,27 @@ stages:
   - scan
   - deploy
 
-
-
 # Build stage: Build the Docker image
 build:
   stage: build
   script:
-    # - docker build -t $DOCKER_IMAGE .
-     - echo "Building  image ..."
-     
+    - echo "Building image..."
 
+# Terraform Initialization
 terraform_init:
   stage: init
   image: hashicorp/terraform:1.6.0
   script:
     - terraform init
 
+# Terraform Validation
 terraform_validate:
   stage: validate
   image: hashicorp/terraform:1.6.0
   script:
     - terraform validate
 
+# Terraform Plan
 terraform_plan:
   stage: plan
   image: hashicorp/terraform:1.6.0
@@ -37,17 +36,17 @@ terraform_plan:
     - terraform plan
 
 # SonarCloud Job
-sonarcloud-check:
+sonarcloud_check:
   stage: test
   image:
     name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]  # Clear the default entrypoint
+    entrypoint: [""]
   cache:
     key: "${CI_JOB_NAME}"
     paths:
-      - .sonar/cache  # Cache for SonarCloud analysis
+      - .sonar/cache
   script:
-    - sonar-scanner  # Run SonarCloud scanner
+    - sonar-scanner
   only:
     - merge_requests
     - master
@@ -56,7 +55,7 @@ sonarcloud-check:
 # ZAP Dynamic Security Test Job
 zap_scan:
   stage: test
-  image: openjdk:17-slim  # Use OpenJDK 17 slim image
+  image: openjdk:17-slim
   script:
     # Install required dependencies
     - apt-get update && apt-get install -y curl unzip
@@ -64,14 +63,13 @@ zap_scan:
     # Download the ZAP tar file
     - curl -L https://github.com/zaproxy/zaproxy/releases/download/v2.15.0/ZAP_2.15.0_linux.tar.gz -o zap.tar.gz
     - tar -xzf zap.tar.gz
-    - cd ZAP_2.15.0  # Change directory to the ZAP folder
+    - cd ZAP_2.15.0
     - echo "Starting ZAP in daemon mode..."
-    # Run ZAP in daemon mode with API key disabled
+    # Run ZAP in daemon mode
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 -config api.disablekey=true &
-    # Wait for ZAP to be ready
     - echo "Waiting for ZAP to start..."
     - |
-      timeout=60  # Timeout in seconds
+      timeout=60
       counter=0
       while ! curl -s http://localhost:9090/JSON/core/view/version > /dev/null && [ $counter -lt $timeout ]; do
         echo "Waiting for ZAP to start... ($counter seconds)"
@@ -80,15 +78,11 @@ zap_scan:
       done
     - if [ $counter -ge $timeout ]; then echo "ZAP failed to start"; exit 1; fi
     - echo "Running security scan..."
-    # Start the security scan
     - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
     - echo "Downloading HTML report..."
-    # Download the HTML report
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
-    # Move the report to the root working directory
     - mv zap_report.html ../zap_report.html
-    - cd ..  # Go back to the root working directory
-    # Verify the report is not empty
+    - cd ..
     - if [ ! -s zap_report.html ]; then
         echo "ZAP report is empty! Check the ZAP configuration or scan results.";
         exit 1;
@@ -96,10 +90,16 @@ zap_scan:
   artifacts:
     paths:
       - zap_report.html
+
+# Trivy Security Scan
 trivy_scan:
   stage: scan
+  image: aquasec/trivy:latest
   script:
     - echo "Running Trivy image scan..."
+    - trivy --version
+
+# Deployment Stage
 deploy:
   stage: deploy
   script:
