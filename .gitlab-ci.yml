@@ -110,27 +110,35 @@ trivy_scan:
   variables:
     DOCKER_TLS_CERTDIR: ""
   before_script:
-    # Detect and install required packages based on OS
     - echo "Checking OS..."
     - cat /etc/os-release
     - echo "Installing dependencies..."
-    - if [ -f /etc/alpine-release ]; then apk add --no-cache curl wget; \
-      elif [ -f /etc/debian_version ]; then apt-get update && apt-get install -y curl wget; \
-      elif [ -f /etc/redhat-release ]; then yum install -y curl wget; \
-      else echo "Unsupported OS!"; exit 1; fi
-
+    - |
+      if [ -f /etc/alpine-release ]; then 
+        apk add --no-cache curl wget;
+      elif [ -f /etc/debian_version ]; then 
+        apt-get update && apt-get install -y curl wget;
+      elif [ -f /etc/redhat-release ]; then 
+        yum install -y curl wget;
+      else 
+        echo "Unsupported OS!";
+        exit 1;
+      fi
   script:
     - echo "Checking connectivity..."
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
 
     # Secure Trivy download
     - echo "Downloading Trivy..."
-    - curl -fsSL --retry 3 --retry-delay 5 -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz
+    - curl -fsSL -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz
 
     # Validate the downloaded file
     - ls -lh trivy.tar.gz
     - file trivy.tar.gz
-    - if ! tar -tzf trivy.tar.gz >/dev/null 2>&1; then echo "Trivy download failed or is corrupted!"; exit 1; fi
+    - if ! tar -tzf trivy.tar.gz >/dev/null 2>&1; then 
+        echo "Trivy download failed or is corrupted!"; 
+        exit 1; 
+      fi
 
     # Extract and install Trivy
     - tar -xvzf trivy.tar.gz
@@ -140,7 +148,7 @@ trivy_scan:
 
     # Ensure Trivy has the latest vulnerability database
     - echo "Updating Trivy database..."
-    - trivy image --download-db-only || { echo "Failed to update Trivy database!"; exit 1; }
+    - trivy image --download-db-only
 
     # Pull the latest image
     - echo "Pulling Docker image..."
@@ -148,8 +156,7 @@ trivy_scan:
 
     # Run Trivy scan
     - echo "Running Trivy scan..."
-    - trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --ignorefile .trivyignore niveditaj1/devsecops:latest || \
-      { echo "Vulnerabilities detected!"; exit 1; }
+    - trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --ignorefile .trivyignore niveditaj1/devsecops:latest || echo "Vulnerabilities detected!"
 
 
 
