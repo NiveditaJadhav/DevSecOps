@@ -104,19 +104,26 @@ zap_scan:
 
 trivy_scan:
   stage: scan
-  image: docker:latest
+  image: niveditaj1/devsecops:latest
   services:
-    - docker:dind  # Enables Docker-in-Docker
+    - docker:dind
   variables:
     DOCKER_TLS_CERTDIR: ""
   script:
     - apk add --no-cache curl wget
     - echo "Checking connectivity..."
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
-    
-    # Install Trivy securely
+
+    # Secure Trivy download
     - echo "Downloading Trivy..."
-    - curl -L -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz
+    - curl -fsSL -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz
+
+    # Validate the downloaded file
+    - file trivy.tar.gz
+    - ls -lh trivy.tar.gz
+    - if ! tar -tzf trivy.tar.gz >/dev/null 2>&1; then echo "Trivy download failed or is corrupted!"; exit 1; fi
+
+    # Extract and install Trivy
     - tar -xvzf trivy.tar.gz
     - chmod +x trivy
     - mv trivy /usr/local/bin/
@@ -130,12 +137,9 @@ trivy_scan:
     - echo "Pulling Docker image..."
     - docker pull niveditaj1/devsecops:latest || { echo "Failed to pull image!"; exit 1; }
 
-    # Run Trivy scan with options
+    # Run Trivy scan
     - echo "Running Trivy scan..."
     - trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --ignorefile .trivyignore niveditaj1/devsecops:latest || echo "Vulnerabilities detected!"
-
-    # Uncomment the line below if you want the pipeline to continue even if vulnerabilities exist
-    # - trivy image --exit-code 0 --severity CRITICAL --ignorefile .trivyignore niveditaj1/devsecops:latest
 
 
 
