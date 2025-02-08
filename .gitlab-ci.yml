@@ -104,21 +104,24 @@ zap_scan:
 
 trivy_scan:
   stage: scan
-  image: niveditaj1/devsecops:latest
+  image: docker:latest
+  services:
+    - docker:dind  # Enables Docker-in-Docker
+  variables:
+    DOCKER_TLS_CERTDIR: ""
   script:
-    - apt-get update && apt-get install -y wget curl iputils-ping
+    - apk add --no-cache curl wget
     - echo "Checking connectivity..."
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
     - echo "Downloading Trivy..."
-    - curl -L -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.48.1/trivy_0.48.1_Linux-64bit.tar.gz || { echo "Download failed!"; exit 1; }
-    - ls -lah trivy.tar.gz || { echo "Trivy file not found!"; exit 1; }
+    - curl -L -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.48.1/trivy_0.48.1_Linux-64bit.tar.gz
     - tar -xvzf trivy.tar.gz
     - chmod +x trivy
     - mv trivy /usr/local/bin/
     - trivy --version
-    - echo "CVE-2023-XXXXX" >> .trivyignore # Ignore known issues
-    - docker pull niveditaj1/devsecops:latest # Ensure latest image
+    - docker pull niveditaj1/devsecops:latest  # Now Docker will be available
     - trivy image --exit-code 1 --severity CRITICAL --ignorefile .trivyignore niveditaj1/devsecops:latest
+
 
 deploy:
   stage: deploy
