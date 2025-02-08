@@ -104,7 +104,7 @@ zap_scan:
 
 trivy_scan:
   stage: scan
-  image: aquasec/trivy:latest
+  image: niveditaj1/devsecops:latest
   script:
     - trivy image --exit-code 1 --severity HIGH,CRITICAL niveditaj1/devsecops:latest
 
