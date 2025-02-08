@@ -26,7 +26,6 @@ terraform_init:
     - terraform init
 
 
-
 terraform_validate:
   stage: validate
   image: niveditaj1/devsecops:latest
