@@ -7,15 +7,18 @@ stages:
 # Build stage: Build the Docker image and manage infrastructure
 build:
   stage: build
+  image: ruby:3.1
   script:
     - echo "Building image..."
     - echo "Setting up infrastructure with Terraform/CloudFormation..."
-    # Example Terraform commands
+    - apt-get update && apt-get install -y wget unzip
+    - wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+    - unzip terraform_1.6.0_linux_amd64.zip
+    - mv terraform /usr/local/bin/
     - terraform init
     - terraform validate
     - terraform plan
-    # Uncomment for actual deployment
-    - terraform apply -auto-approve
+
 
 # SonarCloud Job
 sonarcloud-check:
