@@ -102,13 +102,12 @@ zap_scan:
     paths:
       - zap_report.html
 
-# Trivy Security Scan
 trivy_scan:
   stage: scan
   image: aquasec/trivy:latest
   script:
-    - echo "Running Trivy image scan..."
-    - trivy --version
+    - trivy image niveditaj1/devsecops:latest
+
 
 # Deployment Stage
 deploy:
