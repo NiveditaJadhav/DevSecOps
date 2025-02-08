@@ -102,13 +102,15 @@ zap_scan:
     paths:
       - zap_report.html
 
-trivy_scan:
+ttrivy_scan:
   stage: scan
   image: niveditaj1/devsecops:latest
   script:
+    - apt-get update && apt-get install -y wget
+    - wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz
+    - tar -xvzf trivy_Linux-64bit.tar.gz
+    - mv trivy /usr/local/bin/
     - trivy image --exit-code 1 --severity HIGH,CRITICAL niveditaj1/devsecops:latest
-
-
 
 # Deployment Stage
 deploy:
