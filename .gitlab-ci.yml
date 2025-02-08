@@ -17,21 +17,19 @@ build:
 # Terraform Initialization
 terraform_init:
   stage: init
-  image: hashicorp/terraform:1.6.0
+  image: niveditaj1/devsecops:latest
   script:
     - terraform init
 
-# Terraform Validation
 terraform_validate:
   stage: validate
-  image: hashicorp/terraform:1.6.0
+  image: niveditaj1/devsecops:latest
   script:
     - terraform validate
 
-# Terraform Plan
 terraform_plan:
   stage: plan
-  image: hashicorp/terraform:1.6.0
+  image: niveditaj1/devsecops:latest
   script:
     - terraform plan
 
