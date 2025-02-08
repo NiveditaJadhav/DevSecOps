@@ -106,16 +106,17 @@ trivy_scan:
   stage: scan
   image: niveditaj1/devsecops:latest
   script:
-    - apt-get update && apt-get install -y wget
+    - apt-get update && apt-get install -y wget curl
+    - echo "Checking connectivity..."
+    - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
     - echo "Downloading Trivy..."
-    - wget --retry-connrefused --waitretry=5 --timeout=30 --tries=5 -qO trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz || { echo "Download failed!"; exit 1; }
+    - curl -L -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.48.1/trivy_0.48.1_Linux-64bit.tar.gz || { echo "Download failed!"; exit 1; }
     - ls -lah trivy.tar.gz || { echo "Trivy file not found!"; exit 1; }
     - tar -xvzf trivy.tar.gz
     - chmod +x trivy
     - mv trivy /usr/local/bin/
-    - trivy --version  # ✅ Check if Trivy installed correctly
+    - trivy --version
     - trivy image --exit-code 1 --severity HIGH,CRITICAL niveditaj1/devsecops:latest
-
 
 
 # Deployment Stage
