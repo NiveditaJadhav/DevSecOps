@@ -19,7 +19,12 @@ terraform_init:
   stage: init
   image: niveditaj1/devsecops:latest
   script:
+    - apk add --no-cache curl unzip
+    - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+    - unzip terraform.zip
+    - mv terraform /usr/local/bin/
     - terraform init
+
 
 terraform_validate:
   stage: validate
