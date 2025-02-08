@@ -30,6 +30,10 @@ terraform_validate:
   stage: validate
   image: niveditaj1/devsecops:latest
   script:
+    - apt-get update && apt-get install -y curl unzip
+    - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+    - unzip terraform.zip
+    - mv terraform /usr/local/bin/
     - terraform validate
 
 terraform_plan:
