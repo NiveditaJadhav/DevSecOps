@@ -102,6 +102,8 @@ zap_scan:
     paths:
 
       - zap_report.html
+
+
 trivy_scan:
   stage: scan
   image: niveditaj1/devsecops:latest
@@ -111,7 +113,7 @@ trivy_scan:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
-  script:
+  before_script:
     - echo "Checking OS..."
     - cat /etc/os-release
 
@@ -122,20 +124,30 @@ trivy_scan:
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
 
     - echo "Installing Trivy..."
-    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
     - echo "Verifying Trivy installation..."
-    - trivy --version
-
+    - /usr/local/bin/trivy --version || { echo "Trivy installation failed!"; exit 1; }
+  
+  script:
     - echo "Logging into Docker..."
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY" || { echo "Docker login failed!"; exit 1; }
 
     - echo "Pulling Docker image for scanning..."
-    - docker pull niveditaj1/devsecops:latest
+    - docker pull niveditaj1/devsecops:latest || { echo "Docker pull failed!"; exit 1; }
 
     - echo "Scanning for vulnerabilities..."
-    - trivy image --no-progress --severity HIGH,CRITICAL niveditaj1/devsecops:latest
+    - /usr/local/bin/trivy image --no-progress --severity HIGH,CRITICAL niveditaj1/devsecops:latest || { echo "Trivy scan failed!"; exit 1; }
+  
+  after_script:
+    - echo "Cleaning up..."
 
+  artifacts:
+    when: always
+    reports:
+      vulnerability: trivy-report.json
+    paths:
+      - trivy-report.json
 
 
 deploy:
