@@ -8,12 +8,6 @@ stages:
   - test
   - deploy
 
-# Build stage: Build the Docker image
-build:
-  stage: build
-  script:
-    - echo "Building image..."
-
 # Terraform Initialization
 terraform_init:
   stage: init
@@ -46,6 +40,10 @@ terraform_plan:
     - terraform init  # <-- Initialize Terraform before running any commands
     - terraform plan
 
+build:
+  stage: build
+  script:
+    - echo "Building image..."
 # SonarCloud Job
 sonarcloud_check:
   stage: test
