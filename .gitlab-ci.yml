@@ -100,10 +100,11 @@ zap_scan:
       fi
   artifacts:
     paths:
+
       - zap_report.html
 trivy_scan:
   stage: scan
-image: niveditaj1/devsecops:latest
+  image: niveditaj1/devsecops:latest
   services:
     - docker:dind
   script:
