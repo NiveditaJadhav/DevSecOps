@@ -137,17 +137,16 @@ trivy_scan:
     - docker pull niveditaj1/devsecops:latest || { echo "Docker pull failed!"; exit 1; }
 
     - echo "Scanning for vulnerabilities..."
-    - /usr/local/bin/trivy image --no-progress --severity HIGH,CRITICAL niveditaj1/devsecops:latest || { echo "Trivy scan failed!"; exit 1; }
+    - /usr/local/bin/trivy image --no-progress --severity HIGH,CRITICAL --format json -o trivy-report.json niveditaj1/devsecops:latest || { echo "Trivy scan failed!"; exit 1; }
   
   after_script:
     - echo "Cleaning up..."
 
   artifacts:
     when: always
-    reports:
-      vulnerability: trivy-report.json
     paths:
       - trivy-report.json
+    expire_in: 7d
 
 
 deploy:
