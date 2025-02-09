@@ -1,11 +1,11 @@
 stages:
   - build
+  - scan
   - init
   - validate
   - plan
   - apply
   - test
-  - scan
   - deploy
 
 # Build stage: Build the Docker image
@@ -13,39 +13,6 @@ build:
   stage: build
   script:
     - echo "Building image..."
-trivy_scan:
-  stage: scan
-  image: niveditaj1/devsecops:latest
-  services:
-    - name: docker:dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - echo "Checking OS..."
-    - cat /etc/os-release
-
-    - echo "Installing dependencies..."
-    - apt-get update && apt-get install -y jq curl iputils-ping
-
-    - echo "Checking connectivity..."
-    - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
-
-    - echo "Installing Trivy..."
-    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-
-    - echo "Verifying Trivy installation..."
-    - trivy --version
-
-    - echo "Logging into Docker..."
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-
-    - echo "Pulling Docker image for scanning..."
-    - docker pull niveditaj1/devsecops:latest
-
-    - echo "Scanning for vulnerabilities..."
-    - trivy image --no-progress --severity HIGH,CRITICAL niveditaj1/devsecops:latest
 
 # Terraform Initialization
 terraform_init:
@@ -135,6 +102,39 @@ zap_scan:
     paths:
 
       - zap_report.html
+trivy_scan:
+  stage: scan
+  image: niveditaj1/devsecops:latest
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - echo "Checking OS..."
+    - cat /etc/os-release
+
+    - echo "Installing dependencies..."
+    - apt-get update && apt-get install -y jq curl iputils-ping
+
+    - echo "Checking connectivity..."
+    - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
+
+    - echo "Installing Trivy..."
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+
+    - echo "Verifying Trivy installation..."
+    - trivy --version
+
+    - echo "Logging into Docker..."
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+
+    - echo "Pulling Docker image for scanning..."
+    - docker pull niveditaj1/devsecops:latest
+
+    - echo "Scanning for vulnerabilities..."
+    - trivy image --no-progress --severity HIGH,CRITICAL niveditaj1/devsecops:latest
 
 
 
