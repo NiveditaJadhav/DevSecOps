@@ -30,36 +30,21 @@ setup_trivy:
   script:
     - echo "Checking connectivity..."
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
-
-    # Fetch the latest Trivy version
     - export TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r ".tag_name" | sed 's/v//')
-
-    # Validate if TRIVY_VERSION is retrieved
     - if [ -z "$TRIVY_VERSION" ]; then echo "Failed to fetch Trivy version!"; exit 1; fi
     - echo "Latest Trivy version: $TRIVY_VERSION"
-
-    # Detect system architecture
     - export ARCH=$(uname -m)
-    - if [ "$ARCH" = "x86_64" ]; then ARCH="64bit"; fi
-    - if [ "$ARCH" = "aarch64" ]; then ARCH="ARM64"; fi
+    - if [ "$ARCH" = "x86_64" ]; then export ARCH="64bit"; fi
+    - if [ "$ARCH" = "aarch64" ]; then export ARCH="ARM64"; fi
     - echo "Detected Architecture: $ARCH"
-
-    # Construct Trivy download URL
     - export TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_Linux-${ARCH}.tar.gz"
     - echo "Downloading Trivy from: $TRIVY_URL"
-
-    # Download Trivy and validate success
     - curl -fsSL -o trivy.tar.gz "$TRIVY_URL" || { echo "Failed to download Trivy!"; exit 1; }
-
-    # Extract and install Trivy
     - tar -xzf trivy.tar.gz
     - chmod +x trivy
     - mv trivy /usr/local/bin/
-
-    # Verify installation
     - trivy --version
     - echo "Trivy installation completed successfully!"
-
   artifacts:
     paths:
       - /usr/local/bin/trivy
@@ -103,7 +88,7 @@ sonarcloud_check:
   stage: test
   image:
     name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]  # Ensures that the container runs as expected
+    entrypoint: [""]
   cache:
     key: "${CI_JOB_NAME}"
     paths:
