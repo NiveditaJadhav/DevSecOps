@@ -1,6 +1,6 @@
 stages:
   - build
-  - setup
+    - setup
   - security_scan
   - init
   - validate
@@ -9,11 +9,6 @@ stages:
   - test
   - deploy
 
-# Build stage: Build the Docker image
-build:
-  stage: build
-  script:
-    - echo "Building image..."
 
 variables:
   TRIVY_VERSION: ""
@@ -23,6 +18,15 @@ before_script:
   - cat /etc/os-release
   - echo "Installing dependencies..."
   - apt-get update && apt-get install -y jq curl iputils-ping
+
+# Build stage: Build the Docker image
+build:
+  stage: build
+  script:
+    - echo "Building image..."
+stages:
+  - setup
+  - security_scan
 
 setup_trivy:
   stage: setup
