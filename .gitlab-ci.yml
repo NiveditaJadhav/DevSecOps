@@ -1,6 +1,5 @@
 stages:
   - build
-  - deploy
   - scan
   - init
   - validate
