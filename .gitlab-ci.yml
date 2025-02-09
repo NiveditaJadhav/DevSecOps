@@ -1,22 +1,12 @@
 stages:
   - build
-  - setup
-  - security_scan
   - init
   - validate
   - plan
   - apply
   - test
+  - scan
   - deploy
-
-variables:
-  TRIVY_VERSION: ""
-
-before_script:
-  - echo "Checking OS..."
-  - cat /etc/os-release
-  - echo "Installing dependencies..."
-  - apt-get update && apt-get install -y jq curl iputils-ping
 
 # Build stage: Build the Docker image
 build:
@@ -24,66 +14,39 @@ build:
   script:
     - echo "Building image..."
 
-# Setup Trivy for security scanning
-setup_trivy:
-  stage: setup
-  script:
-    - echo "Checking connectivity..."
-    - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
-    - export TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r ".tag_name" | sed 's/v//')
-    - if [ -z "$TRIVY_VERSION" ]; then echo "Failed to fetch Trivy version!"; exit 1; fi
-    - echo "Latest Trivy version: $TRIVY_VERSION"
-    - export ARCH=$(uname -m)
-    - if [ "$ARCH" = "x86_64" ]; then export ARCH="64bit"; fi
-    - if [ "$ARCH" = "aarch64" ]; then export ARCH="ARM64"; fi
-    - echo "Detected Architecture: $ARCH"
-    - export TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_Linux-${ARCH}.tar.gz"
-    - echo "Downloading Trivy from: $TRIVY_URL"
-    - curl -fsSL -o trivy.tar.gz "$TRIVY_URL" || { echo "Failed to download Trivy!"; exit 1; }
-    - tar -xzf trivy.tar.gz
-    - chmod +x trivy
-    - mv trivy /usr/local/bin/
-    - trivy --version
-    - echo "Trivy installation completed successfully!"
-  artifacts:
-    paths:
-      - /usr/local/bin/trivy
-    expire_in: 1 hour
-
-# Security scan with Trivy
-security_scan:
-  stage: security_scan
-  script:
-    - echo "Running security scan with Trivy..."
-    - trivy fs . || { echo "Trivy scan failed!"; exit 1; }
-  dependencies:
-    - setup_trivy
-
 # Terraform Initialization
 terraform_init:
   stage: init
   image: niveditaj1/devsecops:latest
   script:
+    - apt-get update && apt-get install -y curl unzip
     - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
     - unzip terraform.zip
     - mv terraform /usr/local/bin/
     - terraform init
 
-# Terraform Validate
 terraform_validate:
   stage: validate
   image: niveditaj1/devsecops:latest
   script:
+    - apt-get update && apt-get install -y curl unzip
+    - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+    - unzip terraform.zip
+    - mv terraform /usr/local/bin/
+    - terraform init  # <-- This is the missing step
     - terraform validate
-
-# Terraform Plan
 terraform_plan:
   stage: plan
   image: niveditaj1/devsecops:latest
   script:
+    - apt-get update && apt-get install -y curl unzip
+    - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+    - unzip terraform.zip
+    - mv terraform /usr/local/bin/
+    - terraform init  # <-- Initialize Terraform before running any commands
     - terraform plan
 
-# SonarCloud Check
+# SonarCloud Job
 sonarcloud_check:
   stage: test
   image:
@@ -105,23 +68,29 @@ zap_scan:
   stage: test
   image: openjdk:17-slim
   script:
+    # Install required dependencies
     - apt-get update && apt-get install -y curl unzip
     - echo "Downloading ZAP..."
+    # Download the ZAP tar file
     - curl -L https://github.com/zaproxy/zaproxy/releases/download/v2.15.0/ZAP_2.15.0_linux.tar.gz -o zap.tar.gz
     - tar -xzf zap.tar.gz
     - cd ZAP_2.15.0
     - echo "Starting ZAP in daemon mode..."
+    # Run ZAP in daemon mode
     - java -jar zap-2.15.0.jar -daemon -port 9090 -host 0.0.0.0 -config api.disablekey=true &
     - echo "Waiting for ZAP to start..."
-    - timeout=60
-    - counter=0
-    - while ! curl -s http://localhost:9090/JSON/core/view/version > /dev/null && [ $counter -lt $timeout ]; do
+    - |
+      timeout=60
+      counter=0
+      while ! curl -s http://localhost:9090/JSON/core/view/version > /dev/null && [ $counter -lt $timeout ]; do
         echo "Waiting for ZAP to start... ($counter seconds)"
         sleep 5
         counter=$((counter+5))
       done
     - if [ $counter -ge $timeout ]; then echo "ZAP failed to start"; exit 1; fi
+    - echo "Running security scan..."
     - curl -X POST "http://localhost:9090/JSON/ascan/action/scan/?url=http://localhost:3000/&recurse=true&inScopeOnly=true"
+    - echo "Downloading HTML report..."
     - curl -X GET "http://localhost:9090/OTHER/core/other/htmlreport/" -o zap_report.html
     - mv zap_report.html ../zap_report.html
     - cd ..
@@ -131,9 +100,52 @@ zap_scan:
       fi
   artifacts:
     paths:
-      - zap_report.html
 
-# Deployment stage
+      - zap_report.html
+trivy_scan:
+  stage: scan
+  image: niveditaj1/devsecops:latest
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - echo "Checking OS..."
+    - cat /etc/os-release
+
+    - echo "Installing dependencies..."
+    - apt-get update && apt-get install -y jq curl iputils-ping
+
+    - echo "Checking connectivity..."
+    - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
+
+    - echo "Downloading Trivy..."
+    - export TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r ".tag_name" | sed 's/v//')
+    - export ARCH=$(uname -m)
+    - if [ "$ARCH" = "x86_64" ]; then ARCH="64bit"; fi
+    - if [ "$ARCH" = "aarch64" ]; then ARCH="ARM64"; fi
+    - curl -fsSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_Linux-${ARCH}.tar.gz" || { echo "Failed to download Trivy!"; exit 1; }
+
+    - echo "Extracting Trivy..."
+    - tar zxvf trivy.tar.gz
+    - mv trivy /usr/local/bin/
+    - chmod +x /usr/local/bin/trivy
+
+    - echo "Verifying Trivy installation..."
+    - trivy --version
+
+    - echo "Logging into Docker..."
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+
+    - echo "Pulling Docker image for scanning..."
+    - docker pull niveditaj1/devsecops:latest
+
+    - echo "Scanning for vulnerabilities..."
+    - trivy image --no-progress --severity HIGH,CRITICAL niveditaj1/devsecops:latest
+
+
 deploy:
   stage: deploy
   script:
