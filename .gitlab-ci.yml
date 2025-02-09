@@ -127,10 +127,17 @@ trivy_scan:
     - echo "Checking connectivity..."
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
 
-    # Secure Trivy download with correct URL
+    # Fetch the latest Trivy version dynamically
     - echo "Downloading Trivy..."
-    - export TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep "tag_name" | cut -d '"' -f 4 | sed 's/v//')
-    - curl -fsSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_Linux-64bit.tar.gz"
+    - export TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r ".tag_name" | sed 's/v//')
+
+    # Identify architecture
+    - export ARCH=$(uname -m)
+    - if [ "$ARCH" = "x86_64" ]; then ARCH="64bit"; fi
+    - if [ "$ARCH" = "aarch64" ]; then ARCH="ARM64"; fi
+
+    # Download Trivy with correct architecture
+    - curl -fsSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_Linux-${ARCH}.tar.gz" || { echo "Failed to download Trivy!"; exit 1; }
 
     # Validate the downloaded file
     - ls -lh trivy.tar.gz
