@@ -101,7 +101,6 @@ zap_scan:
   artifacts:
     paths:
       - zap_report.html
-
 trivy_scan:
   stage: scan
   image: niveditaj1/devsecops:latest
@@ -128,9 +127,10 @@ trivy_scan:
     - echo "Checking connectivity..."
     - ping -c 3 github.com || { echo "Cannot reach GitHub!"; exit 1; }
 
-    # Secure Trivy download
+    # Secure Trivy download with correct URL
     - echo "Downloading Trivy..."
-    - curl -fsSL -o trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz
+    - export TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep "tag_name" | cut -d '"' -f 4 | sed 's/v//')
+    - curl -fsSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_Linux-64bit.tar.gz"
 
     # Validate the downloaded file
     - ls -lh trivy.tar.gz
@@ -144,11 +144,11 @@ trivy_scan:
     - tar -xvzf trivy.tar.gz
     - chmod +x trivy
     - mv trivy /usr/local/bin/
-    - trivy --version
+    - trivy --version || { echo "Trivy installation failed!"; exit 1; }
 
     # Ensure Trivy has the latest vulnerability database
     - echo "Updating Trivy database..."
-    - trivy image --download-db-only
+    - trivy image --download-db-only || { echo "Failed to update Trivy database!"; exit 1; }
 
     # Pull the latest image
     - echo "Pulling Docker image..."
@@ -157,7 +157,6 @@ trivy_scan:
     # Run Trivy scan
     - echo "Running Trivy scan..."
     - trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --ignorefile .trivyignore niveditaj1/devsecops:latest || echo "Vulnerabilities detected!"
-
 
 
 deploy:
