@@ -1,5 +1,6 @@
 stages:
   - build
+  - deploy
   - scan
   - init
   - validate
@@ -147,8 +148,19 @@ trivy_scan:
 
 deploy:
   stage: deploy
+  image: docker:latest  # Use Docker CLI-enabled image
+  services:
+    - name: docker:dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   script:
     - echo "Deploying application..."
+    - docker pull niveditaj1/devsecops:latest
+    - docker run -d --name my_app -p 8080:8080 niveditaj1/devsecops:latest
+
   only:
     - master
     - main
