@@ -32,7 +32,6 @@ Infrastructure Deployment: Provision secure cloud infrastructure via Terraform/C
 Continuous Monitoring: Monitor security issues and compliance post-deployment.
 
 🎯 Project Goals:
-
 ✅ Automate security within the CI/CD pipeline.
 ✅ Proactively identify and resolve security vulnerabilities.
 ✅ Ensure secure coding, container security, and infrastructure security.
