@@ -33,7 +33,10 @@ Continuous Monitoring: Monitor security issues and compliance post-deployment.
 
 🎯 Project Goals:
 
-✅ Automate security within the CI/CD pipeline.✅ Proactively identify and resolve security vulnerabilities.✅ Ensure secure coding, container security, and infrastructure security.✅ Improve compliance posture and reduce security risks.
+✅ Automate security within the CI/CD pipeline.
+✅ Proactively identify and resolve security vulnerabilities.
+✅ Ensure secure coding, container security, and infrastructure security.
+✅ Improve compliance posture and reduce security risks.
 
 📂 How to Run
 1.Clone the Repository:  
