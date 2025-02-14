@@ -40,10 +40,9 @@ Continuous Monitoring: Monitor security issues and compliance post-deployment.
 
 📂 How to Run
 1.Clone the Repository:  
-   ```bash
-   git clone https://github.com/your-username/devsecops-pipeline.git
-   cd devsecops-pipeline
-   ```
+  git clone https://github.com/your-username/devsecops-pipeline.git
+  cd devsecops-pipeline
+
 2. Configure CI/CD Pipelines: 
    - Add `.gitlab-ci.yml` for **GitLab CI** or `Jenkinsfile` for **Jenkins**.  
 3. Set Up Tools:
