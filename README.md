@@ -39,6 +39,7 @@ Continuous Monitoring: Monitor security issues and compliance post-deployment.
 ✅ Improve compliance posture and reduce security risks.
 
 📂 How to Run
+
 1.Clone the Repository:  
   git clone https://github.com/your-username/devsecops-pipeline.git
   cd devsecops-pipeline
