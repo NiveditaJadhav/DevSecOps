@@ -1,4 +1,4 @@
-🛡️ DevSecOps Pipeline Integration Project
+🛡️Streamlining Security Across Multiple Environments with DevSecOps
 
 📌 Project Overview
 
